@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartParking - Solución de Estacionamiento Inteligente</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        secondary: '#4A4A96',
+                        accent: '#8282FF',
+                        dark: '#181818',
+                        light: '#FFFFFF'
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+
+        // Verificar modo oscuro
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+    </script>
+    <style>
+        .slide {
+            display: none;
+            height: 100%;
+            transition: all 0.3s ease;
+        }
+        .active-slide {
+            display: flex;
+        }
+        .dot {
+            cursor: pointer;
+            height: 12px;
+            width: 12px;
+            margin: 0 5px;
+            background-color: #bbb;
+            border-radius: 50%;
+            display: inline-block;
+            transition: background-color 0.3s ease;
+        }
+        .active-dot, .dot:hover {
+            background-color: #5D5CDE;
+        }
+        .dark .active-dot, .dark .dot:hover {
+            background-color: #8282FF;
+        }
+        .car-animation {
+            animation: drive 4s infinite linear;
+            transform-origin: center;
+        }
+        @keyframes drive {
+            0% { transform: translateX(-50px); }
+            100% { transform: translateX(calc(100% + 50px)); }
+        }
+        .phone-animation {
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .sensor-animation {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .slot-available {
+            background-color: #4ade80;
+            transition: all 0.4s ease;
+        }
+        .slot-occupied {
+            background-color: #ef4444;
+            transition: all 0.3s ease;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-light dark:bg-dark text-gray-800 dark:text-gray-200 min-h-screen">
+    <div class="container mx-auto px-4 py-8 flex flex-col min-h-screen">
+        <!-- Encabezado -->
+        <header class="mb-8 flex justify-between items-center">
+            <div class="flex items-center">
+                <div class="bg-primary text-white p-2 rounded-lg mr-2">
+                    <i class="fas fa-parking text-2xl"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-primary">SmartParking</h1>
+            </div>
+            <div class="text-gray-600 dark:text-gray-400">
+                <span id="current-slide-info">1/9</span>
+            </div>
+        </header>
+
+        <!-- Contenedor principal de slides -->
+        <div class="flex-grow relative">
+            <!-- Slide 1: Portada -->
+            <div id="slide-1" class="slide active-slide flex-col justify-center items-center text-center">
+                <div class="mb-6 text-primary">
+                    <i class="fas fa-parking text-8xl mb-6 animate-pulse-slow"></i>
+                </div>
+                <h1 class="text-4xl md:text-5xl font-bold mb-4">SmartParking</h1>
+                <p class="text-xl md:text-2xl mb-8 text-gray-600 dark:text-gray-400">Transformando la experiencia de estacionamiento en centros comerciales</p>
+                <div class="mt-6">
+                    <p class="italic text-gray-500 dark:text-gray-400">Toque la pantalla o use las flechas para navegar</p>
+                </div>
+            </div>
+
+            <!-- Slide 2: El Problema -->
+            <div id="slide-2" class="slide flex-col justify-center items-center">
+                <h2 class="text-3xl font-bold mb-8 text-primary">El Problema</h2>
+                <div class="max-w-3xl mx-auto">
+                    <div class="mb-8 bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                        <div class="flex items-start mb-4">
+                            <div class="bg-red-500 p-2 rounded-full text-white mr-4">
+                                <i class="fas fa-times"></i>
+                            </div>
+                            <p class="text-lg">Los clientes pierden tiempo valioso buscando espacios disponibles</p>
+                        </div>
+                        <div class="flex items-start mb-4">
+                            <div class="bg-red-500 p-2 rounded-full text-white mr-4">
+                                <i class="fas fa-times"></i>
+                            </div>
+                            <p class="text-lg">Se genera congestión en las áreas de estacionamiento</p>
+                        </div>
+                        <div class="flex items-start mb-4">
+                            <div class="bg-red-500 p-2 rounded-full text-white mr-4">
+                                <i class="fas fa-times"></i>
+                            </div>
+                            <p class="text-lg">Experiencia negativa antes de ingresar al centro comercial</p>
+                        </div>
+                        <div class="flex items-start">
+                            <div class="bg-red-500 p-2 rounded-full text-white mr-4">
+                                <i class="fas fa-times"></i>
+                            </div>
+                            <p class="text-lg">Oportunidades perdidas para comunicarse con los clientes</p>
+                        </div>
+                    </div>
+                    <div class="relative h-40 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden">
+                        <div class="w-full h-full flex items-center justify-center">
+                            <div class="absolute top-6 grid grid-cols-3 gap-3 w-4/5">
+                                <div class="h-12 bg-red-400 rounded"></div>
+                                <div class="h-12 bg-red-400 rounded"></div>
+                                <div class="h-12 bg-red-400 rounded"></div>
+                                <div class="h-12 bg-red-400 rounded"></div>
+                                <div class="h-12 bg-red-400 rounded"></div>
+                                <div class="h-12 bg-red-400 rounded"></div>
+                            </div>
+                            <div class="car-animation absolute">
+                                <i class="fas fa-car-side text-3xl text-gray-600 dark:text-gray-400"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 3: Nuestra Solución -->
+            <div id="slide-3" class="slide flex-col justify-center items-center">
+                <h2 class="text-3xl font-bold mb-8 text-primary">Nuestra Solución</h2>
+                <div class="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                        <div class="text-center mb-4">
+                            <i class="fas fa-server text-4xl text-primary mb-4"></i>
+                            <h3 class="text-xl font-bold">Software de Gestión</h3>
+                        </div>
+                        <ul class="space-y-3">
+                            <li class="flex items-start">
+                                <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                                <span>Sistema central que recibe datos de los sensores</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                                <span>Registro en tiempo real de espacios ocupados y disponibles</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                                <span>Analíticas de uso y patrones de estacionamiento</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                                <span>Integración con sistemas de pago existentes</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                        <div class="text-center mb-4">
+                            <i class="fas fa-mobile-alt text-4xl text-primary mb-4 phone-animation inline-block"></i>
+                            <h3 class="text-xl font-bold">Aplicación Móvil</h3>
+                        </div>
+                        <ul class="space-y-3">
+                            <li class="flex items-start">
+                                <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                                <span>Visualización de espacios disponibles en tiempo real</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                                <span>Reserva y pago de espacios desde el teléfono</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                                <span>Notificaciones y ofertas personalizadas</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                                <span>Disponible para iOS y Android</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 4: Cómo Funciona -->
+            <div id="slide-4" class="slide flex-col justify-center items-center">
+                <h2 class="text-3xl font-bold mb-8 text-primary">¿Cómo Funciona?</h2>
+                <div class="max-w-4xl mx-auto">
+                    <div class="flex flex-col md:flex-row gap-6 items-center justify-center mb-8">
+                        <div class="flex-1 p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md text-center">
+                            <div class="h-20 flex items-center justify-center">
+                                <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center sensor-animation">
+                                    <i class="fas fa-wifi text-primary"></i>
+                                </div>
+                            </div>
+                            <h3 class="font-bold mb-2">1. Sensores</h3>
+                            <p class="text-gray-600 dark:text-gray-400">Detectan la presencia o ausencia de vehículos</p>
+                        </div>
+                        <div class="text-4xl text-primary">
+                            <i class="fas fa-arrow-right hidden md:block"></i>
+                            <i class="fas fa-arrow-down md:hidden"></i>
+                        </div>
+                        <div class="flex-1 p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md text-center">
+                            <div class="h-20 flex items-center justify-center">
+                                <i class="fas fa-database text-4xl text-primary"></i>
+                            </div>
+                            <h3 class="font-bold mb-2">2. Software</h3>
+                            <p class="text-gray-600 dark:text-gray-400">Procesa datos y actualiza la información en tiempo real</p>
+                        </div>
+                        <div class="text-4xl text-primary">
+                            <i class="fas fa-arrow-right hidden md:block"></i>
+                            <i class="fas fa-arrow-down md:hidden"></i>
+                        </div>
+                        <div class="flex-1 p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md text-center">
+                            <div class="h-20 flex items-center justify-center">
+                                <i class="fas fa-mobile-alt text-4xl text-primary"></i>
+                            </div>
+                            <h3 class="font-bold mb-2">3. App</h3>
+                            <p class="text-gray-600 dark:text-gray-400">Muestra disponibilidad y permite reservas</p>
+                        </div>
+                    </div>
+                    <div class="bg-gray-100 dark:bg-gray-800 p-6 rounded-lg">
+                        <div class="text-center mb-4">
+                            <h3 class="font-bold text-xl">Vista del Estacionamiento</h3>
+                        </div>
+                        <div class="grid grid-cols-4 gap-3 mb-4">
+                            <div id="slot1" class="h-12 slot-available rounded flex items-center justify-center">A1</div>
+                            <div id="slot2" class="h-12 slot-available rounded flex items-center justify-center">A2</div>
+                            <div id="slot3" class="h-12 slot-occupied rounded flex items-center justify-center">A3</div>
+                            <div id="slot4" class="h-12 slot-available rounded flex items-center justify-center">A4</div>
+                            <div id="slot5" class="h-12 slot-occupied rounded flex items-center justify-center">B1</div>
+                            <div id="slot6" class="h-12 slot-occupied rounded flex items-center justify-center">B2</div>
+                            <div id="slot7" class="h-12 slot-available rounded flex items-center justify-center">B3</div>
+                            <div id="slot8" class="h-12 slot-available rounded flex items-center justify-center">B4</div>
+                        </div>
+                        <div class="flex justify-center gap-4 text-sm">
+                            <div class="flex items-center">
+                                <div class="w-4 h-4 bg-green-400 rounded mr-2"></div>
+                                <span>Disponible</span>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-4 h-4 bg-red-400 rounded mr-2"></div>
+                                <span>Ocupado</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 5: Beneficios para Clientes -->
+            <div id="slide-5" class="slide flex-col justify-center items-center">
+                <h2 class="text-3xl font-bold mb-8 text-primary">Beneficios para los Usuarios</h2>
+                <div class="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow flex items-start">
+                        <div class="bg-primary text-white p-3 rounded-full mr-4">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg mb-2">Ahorro de Tiempo</h3>
+                            <p class="text-gray-600 dark:text-gray-400">Encuentra espacios disponibles instantáneamente sin dar vueltas innecesarias</p>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow flex items-start">
+                        <div class="bg-primary text-white p-3 rounded-full mr-4">
+                            <i class="fas fa-shopping-bag"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg mb-2">Mejor Experiencia</h3>
+                            <p class="text-gray-600 dark:text-gray-400">Comienza la visita al centro comercial sin frustraciones</p>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow flex items-start">
+                        <div class="bg-primary text-white p-3 rounded-full mr-4">
+                            <i class="fas fa-credit-card"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg mb-2">Facilidad de Pago</h3>
+                            <p class="text-gray-600 dark:text-gray-400">Pago digital integrado con compras o directamente desde la app</p>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow flex items-start">
+                        <div class="bg-primary text-white p-3 rounded-full mr-4">
+                            <i class="fas fa-tag"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg mb-2">Ofertas Exclusivas</h3>
+                            <p class="text-gray-600 dark:text-gray-400">Acceso a promociones personalizadas de las tiendas del centro comercial</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 6: Beneficios para Centros Comerciales -->
+            <div id="slide-6" class="slide flex-col justify-center items-center">
+                <h2 class="text-3xl font-bold mb-8 text-primary">Beneficios para su Centro Comercial</h2>
+                <div class="max-w-4xl mx-auto">
+                    <div class="grid md:grid-cols-3 gap-6 mb-8">
+                        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center">
+                            <div class="h-16 flex items-center justify-center">
+                                <i class="fas fa-users text-4xl text-primary"></i>
+                            </div>
+                            <h3 class="font-bold text-lg mb-2">Mayor Afluencia</h3>
+                            <p class="text-gray-600 dark:text-gray-400">Eliminar la fricción en el estacionamiento aumenta las visitas</p>
+                        </div>
+                        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center">
+                            <div class="h-16 flex items-center justify-center">
+                                <i class="fas fa-chart-line text-4xl text-primary"></i>
+                            </div>
+                            <h3 class="font-bold text-lg mb-2">Mayores Ventas</h3>
+                            <p class="text-gray-600 dark:text-gray-400">Clientes satisfechos compran más</p>
+                        </div>
+                        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center">
+                            <div class="h-16 flex items-center justify-center">
+                                <i class="fas fa-bullhorn text-4xl text-primary"></i>
+                            </div>
+                            <h3 class="font-bold text-lg mb-2">Canal de Marketing</h3>
+                            <p class="text-gray-600 dark:text-gray-400">Nueva plataforma para promocionar ofertas y eventos</p>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                        <h3 class="font-bold text-lg mb-4 text-center">Ventaja Competitiva e Innovación</h3>
+                        <div class="flex flex-col md:flex-row gap-4">
+                            <div class="flex-1">
+                                <div class="flex items-start mb-3">
+                                    <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                                    <p>Diferenciación frente a otros centros comerciales</p>
+                                </div>
+                                <div class="flex items-start">
+                                    <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                                    <p>Imagen de modernidad y preocupación por la experiencia del cliente</p>
+                                </div>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex items-start mb-3">
+                                    <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                                    <p>Datos valiosos sobre patrones de tráfico y comportamiento</p>
+                                </div>
+                                <div class="flex items-start">
+                                    <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                                    <p>Menor congestión en sus instalaciones</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 7: Modelo de Negocio -->
+            <div id="slide-7" class="slide flex-col justify-center items-center">
+                <h2 class="text-3xl font-bold mb-8 text-primary">Modelo de Negocio</h2>
+                <div class="max-w-4xl mx-auto">
+                    <div class="grid md:grid-cols-2 gap-8 mb-8">
+                        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                            <h3 class="font-bold text-xl mb-4 text-center">Para el Centro Comercial</h3>
+                            <div class="mb-6">
+                                <div class="flex justify-between items-center border-b pb-2 mb-2">
+                                    <span class="font-medium">Modalidad:</span>
+                                    <span class="text-primary font-bold">Servicio por Suscripción</span>
+                                </div>
+                                <div class="flex justify-between items-center border-b pb-2 mb-2">
+                                    <span class="font-medium">Instalación de sensores:</span>
+                                    <span>Incluida en implementación inicial</span>
+                                </div>
+                                <div class="flex justify-between items-center border-b pb-2 mb-2">
+                                    <span class="font-medium">Mantenimiento:</span>
+                                    <span>Incluido en suscripción</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium">Actualizaciones:</span>
+                                    <span>Continuas sin costo adicional</span>
+                                </div>
+                            </div>
+                            <div class="mt-6 text-center">
+                                <span class="block text-gray-500 dark:text-gray-400">Inversión inicial mínima</span>
+                                <span class="block text-primary font-bold text-xl">ROI rápido por aumento de tráfico</span>
+                            </div>
+                        </div>
+                        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                            <h3 class="font-bold text-xl mb-4 text-center">Fuentes de Ingresos</h3>
+                            <ul class="space-y-4">
+                                <li class="flex items-start">
+                                    <div class="bg-primary text-white p-2 rounded-full mr-3 mt-1">
+                                        <i class="fas fa-building"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold">Suscripción del Centro Comercial</h4>
+                                        <p class="text-gray-600 dark:text-gray-400">Tarifa mensual basada en el tamaño del estacionamiento</p>
+                                    </div>
+                                </li>
+                                <li class="flex items-start">
+                                    <div class="bg-primary text-white p-2 rounded-full mr-3 mt-1">
+                                        <i class="fas fa-ad"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold">Publicidad en la App</h4>
+                                        <p class="text-gray-600 dark:text-gray-400">Canal directo a clientes potenciales</p>
+                                    </div>
+                                </li>
+                                <li class="flex items-start">
+                                    <div class="bg-primary text-white p-2 rounded-full mr-3 mt-1">
+                                        <i class="fas fa-user-tag"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold">Membresías Premium</h4>
+                                        <p class="text-gray-600 dark:text-gray-400">Opción sin publicidad para usuarios</p>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 8: Propuesta de Colaboración -->
+            <div id="slide-8" class="slide flex-col justify-center items-center">
+                <h2 class="text-3xl font-bold mb-8 text-primary">Propuesta de Colaboración</h2>
+                <div class="max-w-4xl mx-auto bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg">
+                    <h3 class="text-2xl font-bold mb-6 text-center">Centro Comercial Piloto</h3>
+                    <p class="mb-6 text-center text-lg">Buscamos un socio visionario para lanzar este innovador sistema</p>
+                    
+                    <div class="grid md:grid-cols-2 gap-8 mb-8">
+                        <div>
+                            <h4 class="font-bold text-xl mb-4 text-primary">Lo que ofrecemos</h4>
+                            <ul class="space-y-3">
+                                <li class="flex items-start">
+                                    <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                                    <span>Sistema personalizado a sus necesidades específicas</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                                    <span>Prioridad en desarrollo de nuevas funcionalidades</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                                    <span>Tarifa preferencial permanente</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                                    <span>Reconocimiento como socio innovador</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-xl mb-4 text-primary">Su participación</h4>
+                            <ul class="space-y-3">
+                                <li class="flex items-start">
+                                    <i class="fas fa-arrow-right text-primary mt-1 mr-2"></i>
+                                    <span>Inversión inicial para el desarrollo del sistema</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-arrow-right text-primary mt-1 mr-2"></i>
+                                    <span>Acceso a instalaciones para implementación piloto</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-arrow-right text-primary mt-1 mr-2"></i>
+                                    <span>Feedback para mejorar el sistema</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-arrow-right text-primary mt-1 mr-2"></i>
+                                    <span>Compromiso de prueba durante 6 meses</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-primary bg-opacity-10 p-6 rounded-lg text-center">
+                        <h4 class="font-bold text-xl mb-3">Beneficio exclusivo</h4>
+                        <p class="text-lg">El centro comercial piloto obtendrá un <span class="font-bold text-primary">50% de descuento</span> en la suscripción mensual durante el primer año tras el lanzamiento</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 9: Contacto y Cierre -->
+            <div id="slide-9" class="slide flex-col justify-center items-center">
+                <h2 class="text-3xl font-bold mb-8 text-primary">¡Gracias por su Atención!</h2>
+                <div class="max-w-3xl mx-auto text-center">
+                    <div class="mb-8">
+                        <i class="fas fa-parking text-7xl text-primary mb-6"></i>
+                        <h3 class="text-2xl font-bold">SmartParking</h3>
+                        <p class="text-xl text-gray-600 dark:text-gray-400">Transformando la experiencia de estacionamiento</p>
+                    </div>
+                    
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md mb-8">
+                        <h3 class="font-bold text-xl mb-4">Próximos Pasos</h3>
+                        <ol class="space-y-3 text-left">
+                            <li class="flex items-start">
+                                <div class="bg-primary text-white w-7 h-7 rounded-full flex items-center justify-center mr-3 flex-shrink-0">1</div>
+                                <span>Reunión técnica para evaluar necesidades específicas</span>
+                            </li>
+                            <li class="flex items-start">
+                                <div class="bg-primary text-white w-7 h-7 rounded-full flex items-center justify-center mr-3 flex-shrink-0">2</div>
+                                <span>Propuesta detallada con presupuesto y cronograma</span>
+                            </li>
+                            <li class="flex items-start">
+                                <div class="bg-primary text-white w-7 h-7 rounded-full flex items-center justify-center mr-3 flex-shrink-0">3</div>
+                                <span>Acuerdo de colaboración</span>
+                            </li>
+                            <li class="flex items-start">
+                                <div class="bg-primary text-white w-7 h-7 rounded-full flex items-center justify-center mr-3 flex-shrink-0">4</div>
+                                <span>Desarrollo e implementación (3-4 meses estimados)</span>
+                            </li>
+                        </ol>
+                    </div>
+                    
+                    <div class="text-center">
+                        <p class="text-lg font-bold mb-2">¿Preguntas?</p>
+                        <p class="text-gray-600 dark:text-gray-400">Estamos listos para discutir cómo SmartParking puede transformar la experiencia en su centro comercial</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navegación y controles -->
+        <div class="mt-8 flex flex-col items-center">
+            <div class="flex justify-center mb-4">
+                <button id="prev-btn" class="bg-primary text-white p-2 rounded-lg mr-4 hover:bg-secondary transition-colors">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button id="next-btn" class="bg-primary text-white p-2 rounded-lg hover:bg-secondary transition-colors">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+            <div id="dots-container" class="flex justify-center"></div>
+        </div>
+    </div>
+
+    <script>
+        // Variables de control para la presentación
+        let currentSlide = 1;
+        const totalSlides = 9;
+        
+        // Referencias a elementos
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const currentSlideInfo = document.getElementById('current-slide-info');
+        const dotsContainer = document.getElementById('dots-container');
+        
+        // Crear dots para navegación
+        for (let i = 1; i <= totalSlides; i++) {
+            const dot = document.createElement('span');
+            dot.classList.add('dot');
+            if (i === 1) {
+                dot.classList.add('active-dot');
+            }
+            dot.dataset.slide = i;
+            dot.addEventListener('click', () => {
+                goToSlide(i);
+            });
+            dotsContainer.appendChild(dot);
+        }
+        
+        // Función para ir a una diapositiva específica
+        function goToSlide(slideNumber) {
+            // Ocultar slide actual
+            document.getElementById(`slide-${currentSlide}`).classList.remove('active-slide');
+            
+            // Actualizar dot activo
+            document.querySelector(`.dot[data-slide="${currentSlide}"]`).classList.remove('active-dot');
+            
+            // Actualizar slide actual
+            currentSlide = slideNumber;
+            
+            // Mostrar nuevo slide
+            document.getElementById(`slide-${currentSlide}`).classList.add('active-slide');
+            document.getElementById(`slide-${currentSlide}`).classList.add('fade-in');
+            
+            // Actualizar dot activo
+            document.querySelector(`.dot[data-slide="${currentSlide}"]`).classList.add('active-dot');
+            
+            // Actualizar contador de slides
+            currentSlideInfo.textContent = `${currentSlide}/${totalSlides}`;
+        }
+        
+        // Event listeners para botones de navegación
+        prevBtn.addEventListener('click', () => {
+            if (currentSlide > 1) {
+                goToSlide(currentSlide - 1);
+            }
+        });
+        
+        nextBtn.addEventListener('click', () => {
+            if (currentSlide < totalSlides) {
+                goToSlide(currentSlide + 1);
+            }
+        });
+        
+        // Permitir navegación con teclado
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' && currentSlide > 1) {
+                goToSlide(currentSlide - 1);
+            } else if (e.key === 'ArrowRight' && currentSlide < totalSlides) {
+                goToSlide(currentSlide + 1);
+            }
+        });
+        
+        // Permitir navegación tocando la pantalla (para móviles)
+        document.addEventListener('click', (e) => {
+            // Solo si el clic fue en el área principal y no en un botón o dot
+            if (!e.target.closest('button') && !e.target.closest('.dot')) {
+                const windowWidth = window.innerWidth;
+                const clickX = e.clientX;
+                
+                // Clic en el tercio izquierdo de la pantalla: slide anterior
+                if (clickX < windowWidth / 3 && currentSlide > 1) {
+                    goToSlide(currentSlide - 1);
+                }
+                // Clic en el tercio derecho de la pantalla: slide siguiente
+                else if (clickX > (windowWidth * 2/3) && currentSlide < totalSlides) {
+                    goToSlide(currentSlide + 1);
+                }
+            }
+        });
+        
+        // Animación de slots de estacionamiento
+        function updateParkingSlots() {
+            const slots = [
+                document.getElementById('slot1'),
+                document.getElementById('slot2'),
+                document.getElementById('slot3'),
+                document.getElementById('slot4'),
+                document.getElementById('slot5'),
+                document.getElementById('slot6'),
+                document.getElementById('slot7'),
+                document.getElementById('slot8')
+            ];
+            
+            // Cambiar aleatoriamente el estado de 1-2 slots cada 3 segundos
+            setInterval(() => {
+                const numberOfChanges = Math.floor(Math.random() * 2) + 1;
+                
+                for (let i = 0; i < numberOfChanges; i++) {
+                    const randomIndex = Math.floor(Math.random() * slots.length);
+                    const slot = slots[randomIndex];
+                    
+                    if (slot.classList.contains('slot-available')) {
+                        slot.classList.remove('slot-available');
+                        slot.classList.add('slot-occupied');
+                    } else {
+                        slot.classList.remove('slot-occupied');
+                        slot.classList.add('slot-available');
+                    }
+                }
+            }, 3000);
+        }
+        
+        // Iniciar animación de slots
+        updateParkingSlots();
+    </script>
+</body>
+</html>
